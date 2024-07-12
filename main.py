@@ -21,12 +21,12 @@ COUNT_TEXT_COLOR = (0, 0, 255)
 COUNT_TEXT_THICKNESS = 2
 ESC_KEY = 27
 DEFAULT_VIDEO_PATH = 'video.mp4'
-
-
+OUTPUT_VIDEO_PATH = 'run.mp4'
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Object Detection')
     parser.add_argument('--video', type=str, help='Path to video file', default=DEFAULT_VIDEO_PATH)
+    parser.add_argument('--mode', type=str, choices=['view', 'save'], help='Mode to run the script in', default='view')
     return parser.parse_args()
 
 def initialize_components(video_path):
@@ -66,9 +66,8 @@ def process_frame(frame, model, line_position, car_count, counted_ids):
 
     cv2.line(frame, (0, line_position), (width, line_position), LINE_COLOR, LINE_THICKNESS)
     cv2.putText(frame, f"Count: {car_count}", COUNT_TEXT_POSITION, cv2.FONT_HERSHEY_SIMPLEX, COUNT_TEXT_SCALE, COUNT_TEXT_COLOR, COUNT_TEXT_THICKNESS)
-    cv2.imshow("Frame", frame)
 
-    return car_count
+    return frame, car_count
 
 def main():
     args = parse_arguments()
@@ -80,17 +79,29 @@ def main():
     car_count = 0
     counted_ids = set()
 
+    if args.mode == 'save':
+        input_fps = cap.get(cv2.CAP_PROP_FPS)
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter(OUTPUT_VIDEO_PATH, fourcc, input_fps, (600, 400))
+
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
 
-        car_count = process_frame(frame, model, LINE_POSITION, car_count, counted_ids)
+        frame, car_count = process_frame(frame, model, LINE_POSITION, car_count, counted_ids)
 
-        if cv2.waitKey(1) & 0xFF == ESC_KEY:
-            break
+        if args.mode == 'view':
+            cv2.imshow("Frame", frame)
+            if cv2.waitKey(1) & 0xFF == ESC_KEY:
+                break
+        elif args.mode == 'save':
+            out.write(frame)
 
     cap.release()
+    if args.mode == 'save':
+        out.release()
+        print(f"The video has been saved at '{OUTPUT_VIDEO_PATH}'")
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":

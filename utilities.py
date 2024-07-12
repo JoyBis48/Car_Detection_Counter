@@ -35,6 +35,7 @@ def get_car_color(roi):
             max_pixels = num_pixels
             dominant_color = color
 
+    # colour swap
     if dominant_color == "Red":
         return "Blue"
     elif dominant_color == "Blue":

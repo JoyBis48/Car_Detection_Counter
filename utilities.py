@@ -1,5 +1,8 @@
 import cv2
 import numpy as np
+from PIL import Image
+import tempfile
+import os
 
 def create_color_mask(hsv, ranges):
     mask = None
@@ -42,3 +45,33 @@ def get_car_color(roi):
         return "Red"
     
     return dominant_color
+    
+def get_person_gender(roi, model):
+    # Convert the ROI to a PIL Image
+    roi_image = Image.fromarray(roi.astype('uint8'), 'RGB')
+    
+    # Save the image to a temporary file, intending to manually delete it later
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
+        roi_image.save(tmp, format='JPEG')
+        tmp_path = tmp.name
+    
+    # Pass the file path to the model
+    results = model.predict(tmp_path)
+    
+    # Clean up: remove the temporary file
+    os.remove(tmp_path)
+
+    if len(results) > 0 and len(results[0].boxes) > 0:
+        # Access the first detection's class ID
+        class_id = results[0].boxes.cls[0].item()  # Convert tensor to Python scalar
+        
+        # Return "Male" if class_id is 0, "Female" if class_id is 1, else return an empty string
+        if class_id == 0:
+            return "Male"
+        elif class_id == 1:
+            return "Female"
+        else:
+            return ""
+    else:
+        # Return an empty string indicating no detection
+        return ""

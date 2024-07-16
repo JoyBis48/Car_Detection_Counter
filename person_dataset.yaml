@@ -1,0 +1,8 @@
+train: person_gender_datset\train\images
+val: person_gender_datset\val\images
+test: person_gender_datset\test\images
+nc: 2
+
+names:
+  0: Male
+  1: Female

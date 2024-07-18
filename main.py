@@ -6,8 +6,8 @@ import os
 
 # Constants
 CONFIDENCE_THRESHOLD = 0.5
-CAR_CLASS_ID = 2
-PERSON_CLASS_ID = 0  # Assuming 0 is the class ID for persons in the model being used
+CAR_CLASS_ID = 2 # In the pre-trained coco dataset, 2 is the class index for the class 'car'
+PERSON_CLASS_ID = 0 # 0 is the class index for the class 'people'
 LINE_POSITION = 300
 RECTANGLE_COLOR = (0, 255, 0)
 RECTANGLE_THICKNESS = 2
@@ -17,7 +17,7 @@ TEXT_THICKNESS = 2
 LINE_COLOR = (0, 0, 255)
 LINE_THICKNESS = 2
 COUNT_TEXT_POSITION = (10, 50)
-PERSON_COUNT_TEXT_POSITION = (10, 70)  # New position for person count display
+PERSON_COUNT_TEXT_POSITION = (10, 70)  
 COUNT_TEXT_SCALE = 1
 COUNT_TEXT_COLOR = (0, 0, 255)
 COUNT_TEXT_THICKNESS = 2
@@ -25,6 +25,7 @@ ESC_KEY = 27
 DEFAULT_VIDEO_PATH = 'video.mp4'
 OUTPUT_VIDEO_PATH = 'run.mp4'
 
+# setting up the arguments for video path and view mode customization via CLI
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Object Detection')
     parser.add_argument('--video', type=str, help='Path to video file', default=DEFAULT_VIDEO_PATH)
@@ -40,6 +41,7 @@ def initialize_components(video_path):
     print(f"Loading video from '{video_path}' ")
     return model, cap
 
+# Function to process each frame of the video
 def process_frame(frame, model, line_position, car_count, male_count, female_count, person_count, counted_ids, gender_model):
     frame = cv2.resize(frame, (600, 400))
     height, width, _ = frame.shape
@@ -96,14 +98,15 @@ def main():
     gender_model = YOLO("gender_classifier.pt")
 
     if model is None or cap is None:
-        return  # Exit the function if model or cap is None
+        return  # Exiting the function if model or cap is None
     
     car_count = 0
     person_count = 0 
     male_count = 0
     female_count = 0
-    counted_ids = set()
+    counted_ids = set() # To keep track of the ids of the objects that have been counted
 
+ # If the mode is 'save' the video is saved to the output path
     if args.mode == 'save':
         input_fps = cap.get(cv2.CAP_PROP_FPS)
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -115,7 +118,8 @@ def main():
             break
 
         frame, car_count, male_count, female_count, person_count = process_frame(frame, model, LINE_POSITION, car_count, male_count, female_count, person_count, counted_ids, gender_model)
-
+        
+# If the mode is 'view' the video is displayed on the screen
         if args.mode == 'view':
             cv2.imshow("Frame", frame)
             if cv2.waitKey(1) & 0xFF == ESC_KEY:

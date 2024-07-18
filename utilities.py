@@ -4,6 +4,7 @@ from PIL import Image
 import tempfile
 import os
 
+# Function to create a color mask to detect a specific color range
 def create_color_mask(hsv, ranges):
     mask = None
     for i in range(0, len(ranges), 2):
@@ -15,6 +16,7 @@ def create_color_mask(hsv, ranges):
             mask += cv2.inRange(hsv, lower_bound, upper_bound)
     return mask
 
+# Function to get the dominant color of a car using HSV color space
 def get_car_color(roi):
     hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
     color_ranges = {
@@ -25,12 +27,14 @@ def get_car_color(roi):
         "Blue": [(85, 50, 50), (125, 255, 255)],
         "Purple": [(125, 50, 50), (145, 255, 255)],
         "Pink": [(145, 50, 50), (170, 255, 255)],
-        "White": [(0, 0, 200), (180, 30, 255)]
+        "White": [(0, 0, 200), (180, 30, 255)],
+        "Black": [(0, 0, 0), (180, 255, 30)]
     }
     
     max_pixels = 0
     dominant_color = ""
     
+    # FindING the color with the most pixels in the ROI
     for color, ranges in color_ranges.items():
         mask = create_color_mask(hsv, ranges)
         num_pixels = cv2.countNonZero(mask)
@@ -47,23 +51,19 @@ def get_car_color(roi):
     return dominant_color
     
 def get_person_gender(roi, model):
-    # Convert the ROI to a PIL Image
     roi_image = Image.fromarray(roi.astype('uint8'), 'RGB')
-    
-    # Save the image to a temporary file, intending to manually delete it later
+
     with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
         roi_image.save(tmp, format='JPEG')
         tmp_path = tmp.name
-    
-    # Pass the file path to the model
+
     results = model.predict(tmp_path)
-    
-    # Clean up: remove the temporary file
+
     os.remove(tmp_path)
 
     if len(results) > 0 and len(results[0].boxes) > 0:
-        # Access the first detection's class ID
-        class_id = results[0].boxes.cls[0].item()  # Convert tensor to Python scalar
+        # Accessing the first detection's class ID
+        class_id = results[0].boxes.cls[0].item()  # Converting tensor to Python scalar
         
         # Return "Male" if class_id is 0, "Female" if class_id is 1, else return an empty string
         if class_id == 0:
